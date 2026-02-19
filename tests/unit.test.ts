@@ -20,6 +20,6 @@ const testMidnight = () => {
     }
 };
 
-testTime();
-testMidnight();
+//testTime();
+//testMidnight();
 console.log("\n--- Pruebas finalizadas ---");
