@@ -67,6 +67,14 @@ const seedData = () => {
   console.log("Seed actualizado con las capacidades exactas del gerente.");
 };
 
+app.post('/seed', (req: Request, res: Response) => {
+  areas = [];
+  tables = [];
+  reservations = [];
+  seedData();
+  res.status(200).json({ message: "Datos reiniciados y cargados exitosamente" });
+});
+
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -124,6 +132,11 @@ app.get('/availability', (req: Request, res: Response) => {
 app.post('/reservations', (req: Request, res: Response) => {
   const { partySize, date, startTime, duration, areaId } = req.body;
 
+  const requestDate = new Date(date);
+    if (isNaN(requestDate.getTime()) || requestDate < new Date(new Date().setHours(0,0,0,0))) {
+    return res.status(422).json({ error: "La fecha debe ser hoy o una fecha futura." });
+    }
+
   const candidateTables = tables
     .filter(t => t.areaId === areaId && t.capacity >= partySize)
     .sort((a, b) => a.capacity - b.capacity);
@@ -175,5 +188,5 @@ seedData();
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     //Agregar servidor en Render y actualizar URL en openapi.yaml
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en https://restaurantelaterraza-production.up.railway.app/`);
 });

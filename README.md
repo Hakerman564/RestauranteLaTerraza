@@ -10,7 +10,7 @@ La API permite consultar disponibilidad, crear reservas, confirmar/cancelar y ad
 - Confusión con disponibilidad VIP.
 
 ## 🌍 URL pública
-https://TU-DEPLOY-AQUI.com
+https://restaurantelaterraza-production.up.railway.app/
 
 ## 🚀 Cómo correr el proyecto localmente
 npm install
@@ -106,3 +106,5 @@ Integration test:
 - No se combinan mesas fuera de VIP.
 - No hay autenticación.
 - No hay pagos integrados.
+
+"Probar salud del sistema:" https://restaurantelaterraza-production.up.railway.app/health

@@ -6,7 +6,7 @@ info:
     API para la gestión de reservas mediante auto-asignación. 
     Controla límites por área, capacidades de mesas y evita solapamientos horarios.
 servers:
-  # - url:
+    url: https://restaurantelaterraza-production.up.railway.app/
     description: Servidor de producción
 
 paths:
