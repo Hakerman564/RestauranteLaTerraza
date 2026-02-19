@@ -184,6 +184,10 @@ app.post('/reservations', (req: Request, res: Response) => {
   res.status(201).json(newReservation);
 });
 
+app.get('/', (req, res) => {
+  res.send('Bienvenido a la API de La Terraza. El servidor está encendido y listo.');
+});
+
 seedData();
 const PORT = process.env.PORT || 3000;
 
