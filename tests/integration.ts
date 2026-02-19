@@ -26,4 +26,4 @@ async function runSimpleTest() {
     console.log("--- Pruebas Finalizadas ---");
 }
 
-//runSimpleTest();
+runSimpleTest();
