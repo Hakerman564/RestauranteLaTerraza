@@ -1,13 +1,13 @@
 # Edge Cases - Sistema de Reservas La Terraza
 
-Este documento detalla cómo la API gestiona los casos borde y las reglas de negocio críticas solicitadas por la gerencia.
+Este documento detalla cómo la API gestiona los casos borde y las reglas de negocio críticas solicitadas por la gerencia para evitar sobre-reservas y errores de asignación.
 
 ---
 
 ### 1. Gestión de Capacidad e Inteligencia de Asignación
 * **Escenario:** Reserva para 7 personas en el área `TERRACE`.
 * **Regla de Amigo:** "Reserva 7 personas → se asigna mesa 8".
-* **Explicación Técnica:** El sistema filtra mesas con `capacity >= 7` y aplica un `.sort()` ascendente para asignar la mesa de 8, evitando desperdiciar una mesa de 10 o rechazar al cliente.
+* **Explicación Técnica:** El sistema filtra mesas con `capacity >= 8`. Esto evita que un grupo grande ocupe múltiples mesas pequeñas de forma ineficiente o que el sistema asigne una mesa insuficiente.
 * **Resultado:** **Éxito (201 Created).**
 
 ### 2. Validación de Tiempo (Pasado y Futuro)

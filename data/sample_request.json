@@ -1,0 +1,20 @@
+[
+  {
+    "description": "Reserva estándar para 2 personas en Terraza",
+    "method": "POST",
+    "path": "/reservations",
+    "body": { "partySize": 2, "date": "2026-12-01", "startTime": "19:00", "duration": 90, "areaId": "TERRACE" }
+  },
+  {
+    "description": "Reserva VIP de 6 personas (Debe bloquear A+B)",
+    "method": "POST",
+    "path": "/reservations",
+    "body": { "partySize": 6, "date": "2026-12-01", "startTime": "20:00", "duration": 120, "areaId": "VIP" }
+  },
+  {
+    "description": "Error esperado: Fecha en el pasado",
+    "method": "POST",
+    "path": "/reservations",
+    "body": { "partySize": 4, "date": "2020-01-01", "startTime": "12:00", "duration": 90, "areaId": "LOBBY" }
+  }
+]

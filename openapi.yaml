@@ -1,13 +1,15 @@
 openapi: 3.0.0
 info:
   title: Restaurant Reservation System
-  version: 1.0.0
+  version: 1.1.0
   description: >
-    API para la gestión de reservas mediante auto-asignación. 
-    Controla límites por área, capacidades de mesas y evita solapamientos horarios.
+    API para la gestión de reservas mediante auto-asignación y administración de capacidad física.
+    Soporta límites por área, normalización de capacidad (7->8) y reglas VIP.
 servers:
-    url: https://restaurantelaterraza-production.up.railway.app/
+  - url: https://restaurantelaterraza-production.up.railway.app
     description: Servidor de producción
+  - url: http://localhost:3000
+    description: Servidor Local
 
 paths:
   /health:
@@ -37,25 +39,61 @@ paths:
                 items:
                   $ref: '#/components/schemas/Area'
 
+  /areas/{areaId}/tables:
+    post:
+      summary: Agregar una nueva mesa a un área (Respetando límites)
+      parameters:
+        - name: areaId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "TERRACE"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [capacity]
+              properties:
+                capacity: { type: integer, example: 4 }
+                type: { type: string, enum: [STANDARD, CIRCULAR, VIP_SQUARE], default: "STANDARD" }
+      responses:
+        '201':
+          description: Mesa creada exitosamente
+        '409':
+          description: Conflicto - Límite de mesas alcanzado para el área
+        '404':
+          description: Área no encontrada
+
   /reservations:
     get:
-      summary: Listar reservas (opcionalmente por fecha y área)
+      summary: Listar reservas filtradas
       parameters:
         - name: date
           in: query
           schema: { type: string, format: date }
+          description: Filtrar por día (YYYY-MM-DD)
         - name: areaId
           in: query
           schema: { type: string }
+          description: Filtrar por área específica
       responses:
         '200':
           description: Lista de reservas encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
     
     post:
-      summary: Crear una reserva (Auto-asignación)
+      summary: Crear una reserva (Auto-asignación y Auto-confirmación)
       description: >
-        El sistema busca la mesa más pequeña disponible que cumpla con la capacidad 
-        y no choque con horarios existentes.
+        Busca la mesa ideal (redondeando capacidad). 
+        Las reservas se crean directamente con estado CONFIRMED.
       requestBody:
         required: true
         content:
@@ -64,14 +102,14 @@ paths:
               type: object
               required: [partySize, date, startTime, duration, areaId]
               properties:
-                partySize: { type: integer, example: 7, description: "Se redondeará a la mesa superior" }
-                date: { type: string, format: date, example: "2024-12-01" }
+                partySize: { type: integer, example: 7 }
+                date: { type: string, format: date, example: "2026-12-01" }
                 startTime: { type: string, example: "19:00" }
                 duration: { type: integer, example: 90, enum: [90, 120, 180] }
                 areaId: { type: string, example: "TERRACE" }
       responses:
         '201':
-          description: Reserva creada y mesa asignada
+          description: Reserva creada y confirmada
           content:
             application/json:
               schema:
@@ -79,15 +117,37 @@ paths:
         '409':
           description: Conflicto - No hay mesas disponibles en ese horario
         '422':
-          description: Error de validación o capacidad excedida
+          description: Error de validación (Fecha pasada o capacidad imposible)
+
+  /reservations/{id}/status:
+    patch:
+      summary: Cambiar estado de una reserva
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [CONFIRMED, CANCELLED] }
+      responses:
+        '200':
+          description: Estado actualizado
+        '404':
+          description: Reserva no encontrada
 
   /seed:
     post:
-      summary: Reiniciar y cargar datos iniciales
-      description: Carga las áreas y mesas según el levantamiento inicial del gerente.
+      summary: Reiniciar y cargar configuración inicial del gerente
       responses:
         '200':
-          description: Datos cargados exitosamente
+          description: Datos restaurados según el seed.json
 
 components:
   schemas:
@@ -103,9 +163,9 @@ components:
       type: object
       properties:
         id: { type: string, example: "res_507f1f" }
-        tableId: { type: string, example: "T-01" }
+        tableId: { type: string, example: "TERRACE-1" }
         partySize: { type: integer, example: 7 }
-        date: { type: string, example: "2024-12-01" }
+        date: { type: string, example: "2026-12-01" }
         startTime: { type: string, example: "19:00" }
         endTime: { type: string, example: "20:30" }
-        status: { type: string, enum: [PENDING, CONFIRMED, CANCELLED] }
+        status: { type: string, enum: [CONFIRMED, CANCELLED] }
