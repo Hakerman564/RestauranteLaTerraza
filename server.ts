@@ -67,6 +67,15 @@ const seedData = () => {
   console.log("Seed actualizado con las capacidades exactas del gerente.");
 };
 
+const Capacity = (size: number): number => {
+  if (size <= 2) return 2;
+  if (size <= 4) return 4;
+  if (size <= 6) return 6;
+  if (size <= 8) return 8;
+  if (size <= 10) return 10;
+  return size;
+}
+
 app.post('/seed', (req: Request, res: Response) => {
   areas = [];
   tables = [];
@@ -85,6 +94,34 @@ app.get('/areas', (req: Request, res: Response) => {
     currentTableCount: tables.filter(t => t.areaId === area.id).length
   }));
   res.json(response);
+});
+
+app.post('/areas/:areaId/tables', (req: Request, res: Response) => {
+  const { areaId }  = req.params;
+
+  if (typeof areaId !== 'string') {
+    return res.status(400).json({ error: "Invalid Area ID" });
+  }
+  
+  const { capacity, type } = req.body;
+
+  const area = areas.find(a => a.id === areaId);
+  if (!area) return res.status(404).json({ error: "Área no encontrada" });
+
+  const currentTables = tables.filter(t => t.areaId === areaId && !t.id.includes('-AB'));
+  if (currentTables.length >= area.maxTables) {
+    return res.status(409).json({ error: `Límite de mesas alcanzado para ${area.name} (Máx: ${area.maxTables})` });
+  }
+
+  const newTable: Table = {
+    id: `${areaId}-${currentTables.length + 1}`,
+    areaId,
+    capacity,
+    type: type || 'STANDARD'
+  };
+
+  tables.push(newTable);
+  res.status(201).json(newTable);
 });
 
 app.get('/availability', (req: Request, res: Response) => {
@@ -133,12 +170,14 @@ app.post('/reservations', (req: Request, res: Response) => {
   const { partySize, date, startTime, duration, areaId } = req.body;
 
   const requestDate = new Date(date);
-    if (isNaN(requestDate.getTime()) || requestDate < new Date(new Date().setHours(0,0,0,0))) {
+  if (isNaN(requestDate.getTime()) || requestDate < new Date(new Date().setHours(0,0,0,0))) {
     return res.status(422).json({ error: "La fecha debe ser hoy o una fecha futura." });
-    }
+  }
+
+  const idealCap = Capacity(partySize);
 
   const candidateTables = tables
-    .filter(t => t.areaId === areaId && t.capacity >= partySize)
+    .filter(t => t.areaId === areaId && t.capacity >= idealCap)
     .sort((a, b) => a.capacity - b.capacity);
 
   if (candidateTables.length === 0) {
@@ -177,11 +216,36 @@ app.post('/reservations', (req: Request, res: Response) => {
     date,
     startTime,
     endTime,
-    status: 'PENDING'
+    status: 'CONFIRMED'
   };
   
   reservations.push(newReservation);
   res.status(201).json(newReservation);
+});
+
+app.patch('/reservations/:id/status', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const resIndex = reservations.findIndex(r => r.id === id);
+  if (resIndex === -1) return res.status(404).json({ error: "Reserva no encontrada" });
+
+  if (status !== 'CONFIRMED' && status !== 'CANCELLED') {
+    return res.status(400).json({ error: "Estado no permitido. Use CONFIRMED o CANCELLED" });
+  }
+
+  reservations[resIndex].status = status;
+  res.json(reservations[resIndex]);
+});
+
+app.get('/reservations', (req: Request, res: Response) => {
+  const { date, areaId } = req.query;
+  let filtered = reservations;
+
+  if (date) filtered = filtered.filter(r => r.date === date);
+  if (areaId) filtered = filtered.filter(r => r.areaId === areaId);
+
+  res.json(filtered);
 });
 
 app.get('/', (req, res) => {
